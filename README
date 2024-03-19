@@ -1,0 +1,56 @@
+Nu am facut partea de eficienta ce valora 10 puncte.
+
+Tracker:
+    Initial tracker ul asteapta de la fiecare client sa ii trimita ce fisiere are fiecare si hashurile segmentelor lor
+    pentru a putea sa isi initializeze structurile interne.
+    Dupa ce primeste aceste informatii de la toti clientii, le trimite fiecaruia un mesaj cu "OK" pentru a-i informa ca isi pot pornii threadurile 
+    de download si upload si isi pot incepe activitatea.
+
+    Dupa aceasta faza de initializare trackerul incepe sa astepte mesaje de diferite tipuri de la oricare client.
+    Tipurile de mesaje sunt:
+        list:
+            Mesajele de tip list au forma "list no_of_files", clientul ii trimite trackerului un mesaj de aceasta forma pentru a-l informa pe tracker
+            ca isi doreste ca trackerul sa ii listeze x fisiere.
+            Dupa ce primeste acest mesaj trackerul asteapta de la clientul care a trimis mesajul sa ii trimita cele x nume de fisiere pe rand,
+            pentru fiecare nume de fisier primit trackerul ii trimite inapoi clientului numarul de seeds si peers al fisierului, si pentru
+            fiecare seed ii trimite cate segmente are fiecare fisier si hashurile lor.
+
+        update:
+            Mesajele de tip update au forma "update file_name", cand trackerul primeste un mesaj de aceasta forma, el verifica daca 
+            clientul care a trimis mesajuleste in lista de peers si daca nu il adauga, iar dupa aceea asteapta de la client sa priemasca 
+            numarul de segmente pe care clientul le detine, dar si hashurile lor pentru a-si updata structurile interne cu aceste informatii.
+        
+        file_done:
+            Mesajele de tip file_done au forma "file_done file_name", cand trackerul primeste un astfel de mesaj de la un client acesta il 
+            scoate din lista de peers pentru acel fisier.
+
+        all_files_done:
+            Cand trackerul priemste un astfel de mesaj, el marcheaza clientul ca si terminat si verifica daca nu 
+            cumva toti clientii au terminat, caz in care isi va oprii loopul ce asteapta mesaje si va trimite mesaje de stop
+            pentru toti clientii.
+
+Peer:
+    Fiecare peer isi parseaza fisierul de input si asteapta sa primeasca de la tracker un mesaj care sa ii ceara de fisiere detine.
+    Cand primeste acest mesaj ii trimite trackerului nr de fisiere pe care il detine, si pentru fiecare fisier ii trimite numele fisierului,
+    nr de segmente pe care il detine din acel fisier si hashurile lor.
+    Dupa ce trimite toate aceste informatii asteapta sa primeasca un mesaj de "OK" de la tracker inainte sa isi continue activitatea si sa isi
+    porneasca threadurile de download si upload.
+
+download_thread_func:
+    Initial fiecare peer in functia de download va trimite un request de tip list catre tracker pentru fiecare fisier pe care si l doreste si va
+    primii inapoi de la tracker cati seeds/peers are acel fisier si pt fiecare seed/peer va primii rank ul, nr de segmente si hashurile lor.
+    Dupa aceea pentru fiecare fisier pe care il doreste alege primul seed din lista si incepe sa ii trimita mesaje de download cu numele fisierului 
+    si hashul segmentului pe care il doreste si asteapta sa primeasca inapoi un mesaj de "OK" de la seed inainte sa ceara urmatorul segment.
+    La fiecare 10 segmente descarcate ii trimite trackerului un mesaj de update.
+    Cand termina de descarcat un fisier ii trimite trackerului un mesaj de file_done si scrie hashurile segmentelor fisierului intr un fisier de output.
+    La final, dupa ce termina cu toate fisierele ii trimite trackerului un mesaj de "all_files"done" si returneaza NULL pentru a inchide threadul de download.
+
+upload_thread_func:
+    Acest thread asteapta 2 tipuri de mesaje de la oricine.
+    Tipurile de mesaje:
+        download:
+            acest tip de mesaj are forma "download file_name", cand threadul de upload primeste acest mesaj asteapta dupa sa primeasca si un 
+            segment si dupa trimite inapoi un mesaj de OK.
+
+        stop:
+            Cand primeste acest mesaj isi opreste loop ul care asteapta dupa mesaje si threadul de upload se opreste.
