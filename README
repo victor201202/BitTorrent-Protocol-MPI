@@ -1,5 +1,3 @@
-Nu am facut partea de eficienta ce valora 10 puncte.
-
 Tracker:
     Initial tracker ul asteapta de la fiecare client sa ii trimita ce fisiere are fiecare si hashurile segmentelor lor
     pentru a putea sa isi initializeze structurile interne.
